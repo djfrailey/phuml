@@ -8,13 +8,14 @@
 namespace PhUml\Parser\Code\Builders\Members;
 
 use PhpParser\Node\Param;
-use PhpParser\Node\Stmt\ClassMethod;
-use PhUml\Code\Methods\AbstractMethod;
 use PhUml\Code\Methods\Method;
-use PhUml\Code\Methods\MethodDocBlock;
-use PhUml\Code\Methods\StaticMethod;
-use PhUml\Code\Variables\TypeDeclaration;
+use PhpParser\Node\NullableType;
 use PhUml\Code\Variables\Variable;
+use PhpParser\Node\Stmt\ClassMethod;
+use PhUml\Code\Methods\StaticMethod;
+use PhUml\Code\Methods\AbstractMethod;
+use PhUml\Code\Methods\MethodDocBlock;
+use PhUml\Code\Variables\TypeDeclaration;
 
 /**
  * It builds an array with `Method`s for a `ClassDefinition`, an `InterfaceDefinition` or a
@@ -65,11 +66,27 @@ class MethodsBuilder extends FiltersRunner
             $name = "\${$parameter->name}";
             $type = $parameter->type;
             if ($type !== null) {
+                $type = $this->extractNullableType($type);
                 $typeDeclaration = TypeDeclaration::from($type);
             } else {
                 $typeDeclaration = MethodDocBlock::from($docBlock)->typeOfParameter($name);
             }
             return Variable::declaredWith($name, $typeDeclaration);
         }, $parameters);
+    }
+
+    /**
+     * Extracts the type property from NullableType if necessary
+     *
+     * @param mixed $type
+     * @return string|null
+     */
+    private function extractNullableType($type) : ?string
+    {
+        if ($type instanceof NullableType) {
+            return $type->type;
+        }
+
+        return $type;
     }
 }
